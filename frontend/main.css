@@ -1,0 +1,62 @@
+body {
+  background-color: rgb(0, 0, 0);
+  overflow: hidden;
+}
+
+.enemy-container{
+  position: absolute;
+  width: 100%;
+  top: 0;
+}
+.topMargin{
+  width: 100%;
+  /* height: 200px; */
+}
+.content{
+  display: flex;
+  flex-direction: row;
+}
+/* .leftMargin{
+  width: 8.333vw; 
+} */  
+.enemy{
+  background: rgb(255,0,0);
+background: linear-gradient(0, rgba(255,0,0,1) 57%, rgba(249,255,0,1) 100%);
+  /* width: 0.8333vw; */
+  /* height: 200px; */
+}
+
+.crosshair{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  padding-top: 19%;
+}
+.crosshair p{
+  color: red;
+  font-size: xxx-large;
+  font-weight: bolder;
+  text-shadow: white 1px 1px;
+}
+.wall-strips {
+  display: flex;
+  flex-direction: row;
+}
+.content-strip {
+  width: 0.8333vw;
+}
+
+.sky {
+  width: 100%;
+
+  background-color: rgb(150, 193, 253);
+}
+.ground {
+  width: 100%;
+
+  
+}
+.wall {
+  width: 100%;
+}
