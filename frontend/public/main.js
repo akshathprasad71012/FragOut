@@ -1,11 +1,70 @@
 const fov = 60;
 const fovIncrements = fov / 120;
 const refDistance = 10;
-const cursorSensitivityA = 2.5;
+const cursorSensitivityA = 0.05;
 const cursorSensitivityT = 3;
 const confire = new Audio('./soundtracks/conFire.mp3');
 const fire = new Audio("./soundtracks/fire.mp3");
 const enemyRayError = 0.5;
+const runTimeout = 50;
+
+var gameId = null;
+var playerId = null;
+
+var playerR = 5;
+var playerC = 5;
+var playerA = 0;
+var playerT = 0;
+var canRun = true;
+
+function checkWelcome(msg){
+  let step = 0;
+  let prefix = ""
+  let game = "";
+  let player = "";
+  for (let i = 0; i < msg.length; i++) {
+    if (msg[i] === "/"){
+      step++;
+      continue;
+    }
+    if(step === 0) prefix += msg[i];
+    if (step === 1) game += msg[i];
+    if (step === 2) player += msg[i];
+    
+  }
+  // console.log(prefix);
+  
+  if(step === 0 || prefix !== "WELCOME") return false;
+  try {
+    gameId = parseInt(game);
+    playerId = parseInt(player);
+    console.log(gameId, playerId);
+    if(gameId !== null && playerId !== null){
+      console.log("sending....");
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC}));
+    }
+    
+  } catch (err) {
+    console.log(msg, err);
+  }
+  return true;
+}
+
+
+const socket = new WebSocket("ws://localhost:3000/ws");
+socket.addEventListener("message", (event) => {
+  let msg = event.data;
+  if(!checkWelcome(msg)){
+    console.log(JSON.parse(msg));
+    
+  }
+  
+});
+
+
+
+
+
 
 const map = [["#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#"  ],
              ["#", " ", " ", " ", " ", " ", " ", " ", " ", "#", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "#"  ],
@@ -79,10 +138,8 @@ function handleHit(){
   })
 }
 
-var playerR = 5;
-var playerC = 5;
-var playerA = 0;
-var playerT = 0;
+
+
 
 let enemyList = [
   {
@@ -227,50 +284,74 @@ document.addEventListener("keydown", (event) => {
   let delta = 1;
   let deltaR = delta * cosDegrees(playerA);
   let deltaC = delta * sinDegrees(playerA);
-  
 
-  if (event.key === "w") { 
-
-    
-    playerR -= deltaR;
-    playerC += deltaC;
-    if(map[Math.round(playerR)][Math.round(playerC)] === "#"){
-      playerR += deltaR;
-      playerC -= deltaC;
-    }
-    render();
-    
-  }
-  if (event.key === "s") {
-    playerR += deltaR;
-    playerC -= deltaC;
-    if(map[Math.round(playerR)][Math.round(playerC)] === "#"){
+  if (event.key === "w") {
+    if (canRun) {
       playerR -= deltaR;
       playerC += deltaC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerR += deltaR;
+        playerC -= deltaC;
+      } else {
+        canRun = false;
+        setTimeout(() => {
+          canRun = true;
+        }, runTimeout);
+      }
+      render();
     }
-    render();
+  }
+  if (event.key === "s") {
+    if (canRun) {
+      playerR += deltaR;
+      playerC -= deltaC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerR -= deltaR;
+        playerC += deltaC;
+      } else {
+        canRun = false;
+        setTimeout(() => {
+          canRun = true;
+        }, runTimeout);
+      }
+      render();
+    }
   }
   if (event.key === "a") {
-    let dR = Math.round(delta * cosDegrees(playerA - 90));
-    let dC = Math.round(delta * sinDegrees(playerA - 90));
-    playerR -= dR;
-    playerC += dC;
-    if(map[Math.round(playerR)][Math.round(playerC)] === "#"){
-      playerR += dR;
-      playerC -= dC;
+    if (canRun) {
+      let dR = Math.round(delta * cosDegrees(playerA - 90));
+      let dC = Math.round(delta * sinDegrees(playerA - 90));
+      playerR -= dR;
+      playerC += dC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerR += dR;
+        playerC -= dC;
+      } else {
+        canRun = false;
+        setTimeout(() => {
+          canRun = true;
+        }, runTimeout);
+      }
+      render();
     }
-    render();
   }
   if (event.key === "d") {
-    let dR = Math.round(delta * cosDegrees(playerA + 90));
-    let dC = Math.round(delta * sinDegrees(playerA + 90));
-    playerR -= dR;
-    playerC += dC;
-    if(map[Math.round(playerR)][Math.round(playerC)] === "#"){
-      playerR += dR;
-      playerC -= dC;
+    if (canRun) {
+      let dR = Math.round(delta * cosDegrees(playerA + 90));
+      let dC = Math.round(delta * sinDegrees(playerA + 90));
+      playerR -= dR;
+      playerC += dC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerR += dR;
+        playerC -= dC;
+      } else {
+        canRun = false;
+        setTimeout(() => {
+          canRun = true;
+        }, runTimeout);
+      }
+      render();
     }
-    render();
   }
   if (event.key === "ArrowLeft") {
     playerA -= 10;
@@ -281,7 +362,6 @@ document.addEventListener("keydown", (event) => {
     render();
   }
   // console.log("player-> " , playerR, playerC, playerA);
-  
 });
 
 document.addEventListener("mousedown", (e)=>{
@@ -302,12 +382,12 @@ document.addEventListener("mousemove", (event)=>{
   //console.log(mx);
 
   if(mx > 0){
-    playerA += cursorSensitivityA;
+    playerA += Math.max(cursorSensitivityA * mx, 0.5);
     render();
   }
 
   if(mx < 0){
-    playerA -= cursorSensitivityA;
+    playerA += Math.min(cursorSensitivityA * mx, -0.5);
     render();
   }
   if(my > 0){
