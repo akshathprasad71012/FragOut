@@ -17,6 +17,34 @@ var playerA = 0;
 var playerT = 0;
 var canRun = true;
 
+let enemyList = [
+  {
+    id: 0,
+    r: 19,
+    c: 14,
+    show: false,
+    angle: 0,
+    raycount: 0,
+  },
+  {
+    id: 1,
+    r: 13,
+    c: 26,
+    show: false,
+    angle: 0,
+    raycount: 0,
+  },
+  {
+    id: 2,
+    r: 16,
+    c: 5,
+    show: false,
+    angle: 0,
+    raycount: 0,
+  }
+];
+
+
 function checkWelcome(msg){
   let step = 0;
   let prefix = ""
@@ -39,10 +67,7 @@ function checkWelcome(msg){
     gameId = parseInt(game);
     playerId = parseInt(player);
     console.log(gameId, playerId);
-    if(gameId !== null && playerId !== null){
-      console.log("sending....");
-      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC}));
-    }
+    emitData(true);
     
   } catch (err) {
     console.log(msg, err);
@@ -50,13 +75,46 @@ function checkWelcome(msg){
   return true;
 }
 
+function emitData(askIntro){
+  if(gameId !== null && playerId !== null){
+    console.log("sending....");
+    if(askIntro){
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : true}));
+    }else{
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false}));
+    }
+    
+  }
+}
+
+function handleNewData(newData){
+  let isFound = false;
+  enemyList.forEach(enemy=>{
+    if(enemy.id === newData.playerId){
+      isFound = true;
+      enemy.r = newData.playerR;
+      enemy.c = newData.playerC;
+    }
+  })
+  if(!isFound){
+    let newenemy = {"id": newData.playerId, "r": newData.playerR, "c": newData.playerC, "show": false, "raycount": 0, "angle": 0};
+    console.log(newenemy);
+    enemyList = [...enemyList, newenemy];
+  }
+  if(newData.askIntro){
+    emitData(false);
+  }
+  render();
+}
+
 
 const socket = new WebSocket("ws://localhost:3000/ws");
 socket.addEventListener("message", (event) => {
   let msg = event.data;
   if(!checkWelcome(msg)){
-    console.log(JSON.parse(msg));
-    
+    let obj = JSON.parse(msg);
+    console.log(obj);
+    handleNewData(obj);
   }
   
 });
@@ -141,32 +199,7 @@ function handleHit(){
 
 
 
-let enemyList = [
-  {
-    id: 0,
-    r: 19,
-    c: 14,
-    show: false,
-    angle: 0,
-    raycount: 0,
-  },
-  {
-    id: 1,
-    r: 13,
-    c: 26,
-    show: false,
-    angle: 0,
-    raycount: 0,
-  },
-  {
-    id: 2,
-    r: 16,
-    c: 5,
-    show: false,
-    angle: 0,
-    raycount: 0,
-  }
-];
+
 
 //wall = 5 - 100 vh
 //sky = groung = (100 - wall) / 2
@@ -281,6 +314,8 @@ function render() {
 render();
 
 document.addEventListener("keydown", (event) => {
+  let oldR = playerR;
+  let oldC = playerC;
   let delta = 1;
   let deltaR = delta * cosDegrees(playerA);
   let deltaC = delta * sinDegrees(playerA);
@@ -360,6 +395,10 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") {
     playerA += 10;
     render();
+  }
+
+  if(oldC !== playerC || oldR !== playerR){
+    emitData(false);
   }
   // console.log("player-> " , playerR, playerC, playerA);
 });

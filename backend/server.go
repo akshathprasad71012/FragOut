@@ -64,7 +64,7 @@ func (server *Server) readLoop(ws *websocket.Conn){
 }
 
 func (server *Server) broadcast(msg []byte, sender int){
-	fmt.Println("sending to other players....");
+	//fmt.Println("sending to other players....");
 	playerId := sender;
 	gameId := playerId / 10;
 	currentGame := server.games[gameId];
