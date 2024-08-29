@@ -57,9 +57,9 @@ function emitData(askIntro){
   if(gameId !== null && playerId !== null){
     //console.log("sending....");
     if(askIntro){
-      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : true, "sendTime" : Date.now(), "health": health}));
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : true, "sendTime" : Date.now(), "health": health, "killme": false}));
     }else{
-      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false, "sendTime" : Date.now(), "health": health}));
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false, "sendTime" : Date.now(), "health": health, "killme": false}));
     }
   }
 }
@@ -70,15 +70,34 @@ function handleNewData(newData){
   console.log(playerId, newData.playerId, newData.health);
   if(playerId === newData.playerId){
     health = newData.health;
+    if (health <= 0){
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false, "sendTime" : Date.now(), "health": health, "killme": true}));
+      socket.close();
+    }
     render();
     return;
   }
+  console.log(enemyList);
   enemyList.forEach(enemy=>{
-    if(enemy.id === newData.playerId){
+    if(enemy.playerId === newData.playerId){
       isFound = true;
-      enemy.r = newData.playerR;
-      enemy.c = newData.playerC;
-      enemy.health = newData.health;
+      console.log(newData);
+      
+      if(newData.killme){
+        enemyList.splice(enemyList.indexOf(enemy), 1);
+        console.log(enemyList);
+        let e = document.getElementById(enemy.playerId);
+        console.log(enemy.playerId, e);
+        
+        e && e.remove();
+        
+      }else{
+        enemy.r = newData.playerR;
+        enemy.c = newData.playerC;
+        enemy.health = newData.health;
+      }
+      
+      
     }
   })
   if(!isFound){
@@ -201,7 +220,8 @@ function render() {
   
 
   enemyList.forEach(enemy=>{
-    let e = document.getElementById(enemy.id);
+    console.log("IODfsidoj", enemy)
+    let e = document.getElementById(enemy.playerId);
     e && e.remove();
 
     enemy.show = false;
@@ -293,7 +313,7 @@ function render() {
       let enemywidth = Math.min(5.6, (enemy.raycount *5.6/120));
       let angledelta = enemywidth/1.6666; 
       // console.log("Enemy-> ", enemy.r, enemy.c, enemy.angle, enemywidth);
-      let enemyHtml = `<div class="enemy-container" id="${enemy.id}">
+      let enemyHtml = `<div class="enemy-container" id="${enemy.playerId}">
           <div class="topMargin" style="height: ${55 - playerT - enemyHeight/2}vh"></div>
           <div class="content">
             <div class="leftMargin" style="width: ${0.8333 * (60 - (2*(playerA - enemy.angle + angledelta)))}vw"></div>

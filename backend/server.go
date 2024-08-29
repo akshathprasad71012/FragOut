@@ -52,6 +52,7 @@ func (server *Server) readLoop(ws *websocket.Conn){
 		n, err := ws.Read(buff);
 		if err != nil {
 			if err == io.EOF{
+				fmt.Println(server.conns[ws]);
 				break;
 			}
 			fmt.Println("Read Error", err);
