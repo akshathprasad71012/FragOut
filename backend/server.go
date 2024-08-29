@@ -80,7 +80,7 @@ func (server *Server) broadcast(msg []byte, sender int){
 
 func main(){
 	server := NewServer();
-	fmt.Println("Listening for socket connection on ws://localhost:3003/ws");
+	fmt.Println("Listening for socket connection on ws://localhost:3000/ws");
 	
 	http.Handle("/", http.FileServer(http.Dir("../frontend")))
 	http.Handle("/ws", websocket.Handler(server.handleConnection))

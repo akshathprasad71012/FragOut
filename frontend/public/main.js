@@ -16,33 +16,10 @@ var playerC = 5;
 var playerA = 0;
 var playerT = 0;
 var canRun = true;
+var ping = 0;
+var health = 100;
 
-let enemyList = [
-  {
-    id: 0,
-    r: 19,
-    c: 14,
-    show: false,
-    angle: 0,
-    raycount: 0,
-  },
-  {
-    id: 1,
-    r: 13,
-    c: 26,
-    show: false,
-    angle: 0,
-    raycount: 0,
-  },
-  {
-    id: 2,
-    r: 16,
-    c: 5,
-    show: false,
-    angle: 0,
-    raycount: 0,
-  }
-];
+let enemyList = [];
 
 
 function checkWelcome(msg){
@@ -67,6 +44,7 @@ function checkWelcome(msg){
     gameId = parseInt(game);
     playerId = parseInt(player);
     console.log(gameId, playerId);
+    render();
     emitData(true);
     
   } catch (err) {
@@ -77,28 +55,35 @@ function checkWelcome(msg){
 
 function emitData(askIntro){
   if(gameId !== null && playerId !== null){
-    console.log("sending....");
+    //console.log("sending....");
     if(askIntro){
-      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : true}));
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : true, "sendTime" : Date.now(), "health": health}));
     }else{
-      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false}));
+      socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false, "sendTime" : Date.now(), "health": health}));
     }
-    
   }
 }
 
+
 function handleNewData(newData){
   let isFound = false;
+  console.log(playerId, newData.playerId, newData.health);
+  if(playerId === newData.playerId){
+    health = newData.health;
+    render();
+    return;
+  }
   enemyList.forEach(enemy=>{
     if(enemy.id === newData.playerId){
       isFound = true;
       enemy.r = newData.playerR;
       enemy.c = newData.playerC;
+      enemy.health = newData.health;
     }
   })
   if(!isFound){
-    let newenemy = {"id": newData.playerId, "r": newData.playerR, "c": newData.playerC, "show": false, "raycount": 0, "angle": 0};
-    console.log(newenemy);
+    let newenemy = {"playerId": newData.playerId, "r": newData.playerR, "c": newData.playerC, "show": false, "raycount": 0, "angle": 0, "health": newData.health};
+    //console.log(newenemy);
     enemyList = [...enemyList, newenemy];
   }
   if(newData.askIntro){
@@ -113,6 +98,7 @@ socket.addEventListener("message", (event) => {
   let msg = event.data;
   if(!checkWelcome(msg)){
     let obj = JSON.parse(msg);
+    ping = Date.now() - obj.sendTime;
     console.log(obj);
     handleNewData(obj);
   }
@@ -183,13 +169,16 @@ function handleHit(){
 
       if(playerA > (enemy.angle - 1 - (enemywidth/2)) && playerA < (enemy.angle + 0.5) && ((head - 50 - 0.5) <= playerT) && ((feet - 50) >= playerT)){
         //console.log("HIT HIT HIT");
-        console.log("HIT HIT HIT", playerT, head, feet);
+        //console.log("HIT HIT HIT", playerT, head, feet);
+        enemy.health -= 20;
+        render();
+        socket.send(JSON.stringify({...enemy, "sendTime" : Date.now()}));
         
         document.getElementById("crosshair-content").innerText = "XXX   +   XXX";
         setTimeout(removeBlood, 1000);
 
       }else{
-        console.log(playerT, head, feet);
+        //console.log(playerT, head, feet);
         
       }
     }
@@ -205,6 +194,11 @@ function handleHit(){
 //sky = groung = (100 - wall) / 2
 let wall0 = document.getElementsByClassName("wall")[0];
 function render() {
+  document.getElementsByClassName("ping")[0].innerText = `PING : ${ping}`;
+  document.getElementsByClassName("enemy-count")[0].innerText = `ENEMIES : ${enemyList.length}`;
+  document.getElementsByClassName("health")[0].innerText = `HEALTH : ${health}`;
+  document.getElementById("playerId").innerText= `PLAYER : ${playerId}`;
+  
 
   enemyList.forEach(enemy=>{
     let e = document.getElementById(enemy.id);
@@ -303,7 +297,7 @@ function render() {
           <div class="topMargin" style="height: ${55 - playerT - enemyHeight/2}vh"></div>
           <div class="content">
             <div class="leftMargin" style="width: ${0.8333 * (60 - (2*(playerA - enemy.angle + angledelta)))}vw"></div>
-            <div class="enemy" style="height: ${enemyHeight}vh; width: ${enemywidth}vw"></div>
+            <div class="enemy" style="height: ${enemyHeight}vh; width: ${enemywidth}vw; background: linear-gradient(0, rgba(255,0,0,1) ${Math.max(0, enemy.health - 20)}%, rgba(249,255,0,1) ${enemy.health}%"></div>
           </div>
         </div>`;
       document.getElementById("allemenycontainers").innerHTML += enemyHtml;

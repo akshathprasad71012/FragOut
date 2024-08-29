@@ -60,3 +60,20 @@ background: linear-gradient(0, rgba(255,0,0,1) 57%, rgba(249,255,0,1) 100%);
 .wall {
   width: 100%;
 }
+
+.dashboard{
+  width: fit-content;
+  position: absolute;
+  top: 0;
+}
+.enemy-count, .health, .playerId{
+  width: fit-content;
+  margin : 0;
+  padding-left: 7px;
+}
+
+.ping{
+  width: fit-content;
+  margin: 0;
+  padding: 7px 0 0 7px;
+}
