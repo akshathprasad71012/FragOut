@@ -10,20 +10,23 @@ import (
 )
 
 type Server struct{
-	conns map[*websocket.Conn]int   //socket -> player , -1 in disconnected
-	players map[int]*websocket.Conn  //map of playerId -> socket
-	games map[int][10]*websocket.Conn           //map of gameId -> playerId
+	games map[int][10]*websocket.Conn           //map of gameId -> websockets
+	sock_games map[*websocket.Conn]int          //map of websockets -> gameId
+	sock_playerId map[*websocket.Conn]int       //map of websockets => playerId
+	sock_index map[*websocket.Conn]int
 	numberOfplayers int 
 }
 
 func NewServer() *Server{
-	return &Server{
-		conns: make(map[*websocket.Conn]int),
-		players: make(map[int]*websocket.Conn),
+	s := Server{
 		games: make(map[int][10]*websocket.Conn),
+		sock_games: make(map[*websocket.Conn]int),
+		sock_playerId: make(map[*websocket.Conn]int),
+		sock_index: make(map[*websocket.Conn]int),
 		numberOfplayers: 0,
-		
 	}
+	return &s;
+	
 }
 
 func (server *Server) handleConnection(ws *websocket.Conn){
@@ -31,16 +34,37 @@ func (server *Server) handleConnection(ws *websocket.Conn){
 	  
 
 	playerId := server.numberOfplayers;
-	gameId := server.numberOfplayers / 10;
+	server.sock_playerId[ws] = playerId;
+	vacancyFound := false
+	for gameId, clientArr := range server.games{
+		for i, element := range clientArr{
+			if element == nil{
+				clientArr[i] = ws;
+				server.games[gameId] = clientArr;
+				server.sock_games[ws] = gameId;
+				server.sock_index[ws] = i;
+				vacancyFound = true;
+				break;
+			}
+			if vacancyFound {
+				break;
+			}
+		}
+	}
 
-	server.conns[ws] = playerId; 
-	server.players[playerId] = ws; //playerId
-	currentGame := server.games[gameId];
-	currentGame[playerId % 10] = ws;
-	server.games[gameId] = currentGame;
-	//fmt.Println("Game Id -> ", gameId, "Player Id -> ", playerId, server.games[gameId]);
+	if !vacancyFound {
+		game := server.games[server.numberOfplayers/10];
+		game[0] = ws;
+		server.games[server.numberOfplayers/10] = game;
+		server.sock_games[ws] = server.numberOfplayers/10;
+		server.sock_playerId[ws] = server.numberOfplayers;
+		server.sock_index[ws] = 0;
+	}
+	// fmt.Println(server.games, server.sock_games);
+
 	
-	ws.Write([]byte("WELCOME/" + strconv.Itoa(gameId) + "/" + strconv.Itoa(playerId)));
+	ws.Write([]byte("WELCOME/" + strconv.Itoa(server.sock_games[ws]) + "/" + strconv.Itoa(playerId)));
+	
 	server.numberOfplayers++;
 	server.readLoop(ws);
 }
@@ -52,27 +76,33 @@ func (server *Server) readLoop(ws *websocket.Conn){
 		n, err := ws.Read(buff);
 		if err != nil {
 			if err == io.EOF{
-				fmt.Println(server.conns[ws]);
+				gameId := server.sock_games[ws];
+				i := server.sock_index[ws];
+				game := server.games[gameId];
+				game[i] = nil;
+				server.games[gameId] = game;
+				delete(server.sock_games, ws);
+				delete(server.sock_playerId, ws);
+				delete(server.sock_index, ws);
+				// fmt.Println(server.games, server.sock_games);
 				break;
 			}
 			fmt.Println("Read Error", err);
 			continue
 		}
 		msg := buff[:n];
-		server.broadcast(msg, server.conns[ws]);
+		server.broadcast(msg, server.sock_playerId[ws], server.sock_games[ws]);
 		
 	}
 }
 
-func (server *Server) broadcast(msg []byte, sender int){
-	//fmt.Println("sending to other players....");
-	playerId := sender;
-	gameId := playerId / 10;
+func (server *Server) broadcast(msg []byte, playerId int, gameId int){
+	// fmt.Println("sending to other players....");
 	currentGame := server.games[gameId];
-	//fmt.Println(gameId, playerId, currentGame);
+	// fmt.Println(gameId, playerId, currentGame);
 
 	for _, member := range currentGame{
-		if member != nil && member != server.players[playerId]{
+		if member != nil && server.sock_playerId[member] != playerId{
 			//fmt.Println(server.conns[member]);
 			member.Write(msg);
 		}
