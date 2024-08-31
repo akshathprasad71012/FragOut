@@ -5,6 +5,7 @@ const cursorSensitivityA = 0.05;
 const cursorSensitivityT = 3;
 const confire = new Audio('./soundtracks/conFire.mp3');
 const fire = new Audio("./soundtracks/fire.mp3");
+const hurt = new Audio("./soundtracks/hurt.mp3");
 const enemyRayError = 0.5;
 const runTimeout = 50;
 
@@ -19,6 +20,7 @@ var playerT = 0;
 var canRun = true;
 var ping = 0;
 var health = 100;
+var kills = 0;
 
 let enemyList = [];
 
@@ -46,7 +48,7 @@ function checkWelcome(msg){
     playerId = parseInt(player);
     playerR = spawnLocations[playerId % spawnLocations.length].r;
     playerC = spawnLocations[playerId % spawnLocations.length].c;
-    console.log(gameId, playerId);
+    // console.log(gameId, playerId);
     render();
     emitData(true);
     
@@ -73,10 +75,17 @@ function handleNewData(newData){
   // console.log(playerId, newData.playerId, newData.health);
   if(playerId === newData.playerId){
     health = newData.health;
+    hurt.play();
     if (health <= 0){
       socket.send(JSON.stringify({"gameId" : gameId, "playerId": playerId, "playerR": playerR, "playerC": playerC, "askIntro" : false, "sendTime" : Date.now(), "health": health, "killme": true}));
       socket.close();
+      if(confirm("You Died!!!\nPress OK to play again or CANCEL to quit.")){
+        location.reload();
+      }else{
+        window.close();
+      }
     }
+
     render();
     return;
   }
@@ -84,7 +93,7 @@ function handleNewData(newData){
   enemyList.forEach(enemy=>{
     if(enemy.playerId === newData.playerId){
       isFound = true;
-      console.log(newData);
+      // console.log(newData);
       
       if(newData.killme){
         enemyList.splice(enemyList.indexOf(enemy), 1);
@@ -115,12 +124,15 @@ function handleNewData(newData){
 }
 
 
-const socket = new WebSocket("ws://localhost:3000/ws");
+const socket = new WebSocket("ws://192.168.21.76:3000/ws");
 socket.addEventListener("message", (event) => {
   let msg = event.data;
   if(!checkWelcome(msg)){
     let obj = JSON.parse(msg);
-    ping = Date.now() - obj.sendTime;
+    let now = Date.now();
+    ping = Math.abs(now - obj.sendTime);
+    console.log("receiver", now, "sender", obj.sendTime);
+    
     // console.log(obj);
     handleNewData(obj);
   }
@@ -193,7 +205,10 @@ function handleHit(){
         //console.log("HIT HIT HIT", playerT, head, feet);
         //let hitHeight = (playerT -feet+50) + (head - 50 - 0.5 - playerT);
         enemy.health -= Math.round((5 + 10**((enemyHeight - playerT)/enemyHeight)) / ((dist +15) / refDistance));
-        console.log(dist);
+        if(enemy.health <= 0){
+          kills++;
+        }
+        // console.log(dist);
         
         render();
         socket.send(JSON.stringify({...enemy, "sendTime" : Date.now()}));
@@ -222,6 +237,7 @@ function render() {
   document.getElementsByClassName("enemy-count")[0].innerText = `ENEMIES : ${enemyList.length}`;
   document.getElementsByClassName("health")[0].innerText = `HEALTH : ${health}`;
   document.getElementById("playerId").innerText= `PLAYER : ${playerId}`;
+  document.getElementById("kill").innerText= `KILLS : ${kills}`;
   
 
   enemyList.forEach(enemy=>{
@@ -339,71 +355,80 @@ document.addEventListener("keydown", (event) => {
   let deltaR = delta * cosDegrees(playerA);
   let deltaC = delta * sinDegrees(playerA);
 
-  if (event.key === "w") {
+  if (event.key === "w" || event.key === "W") {
     if (canRun) {
       playerR -= deltaR;
-      playerC += deltaC;
       if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
         playerR += deltaR;
-        playerC -= deltaC;
-      } else {
-        canRun = false;
-        setTimeout(() => {
-          canRun = true;
-        }, runTimeout);
       }
+
+      playerC += deltaC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerC -= deltaC;
+      }
+      canRun = false;
+      setTimeout(() => {
+        canRun = true;
+      }, runTimeout);
+
       render();
     }
   }
-  if (event.key === "s") {
+  if (event.key === "s" || event.key === "S") {
     if (canRun) {
       playerR += deltaR;
-      playerC -= deltaC;
       if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
         playerR -= deltaR;
-        playerC += deltaC;
-      } else {
-        canRun = false;
-        setTimeout(() => {
-          canRun = true;
-        }, runTimeout);
       }
+      playerC -= deltaC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerC += deltaC;
+      }
+      canRun = false;
+      setTimeout(() => {
+        canRun = true;
+      }, runTimeout);
+
       render();
     }
   }
-  if (event.key === "a") {
+  if (event.key === "a" || event.key === "A") {
     if (canRun) {
       let dR = Math.round(delta * cosDegrees(playerA - 90));
       let dC = Math.round(delta * sinDegrees(playerA - 90));
       playerR -= dR;
-      playerC += dC;
       if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
         playerR += dR;
-        playerC -= dC;
-      } else {
-        canRun = false;
-        setTimeout(() => {
-          canRun = true;
-        }, runTimeout);
       }
+      playerC += dC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerC -= dC;
+      }
+      canRun = false;
+      setTimeout(() => {
+        canRun = true;
+      }, runTimeout);
+
       render();
     }
   }
-  if (event.key === "d") {
+  if (event.key === "d" || event.key === "D") {
     if (canRun) {
       let dR = Math.round(delta * cosDegrees(playerA + 90));
       let dC = Math.round(delta * sinDegrees(playerA + 90));
       playerR -= dR;
-      playerC += dC;
       if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
         playerR += dR;
-        playerC -= dC;
-      } else {
-        canRun = false;
-        setTimeout(() => {
-          canRun = true;
-        }, runTimeout);
       }
+      playerC += dC;
+      if (map[Math.round(playerR)][Math.round(playerC)] === "#") {
+        playerC -= dC;
+      }
+      canRun = false;
+      setTimeout(() => {
+        canRun = true;
+      }, runTimeout);
+
       render();
     }
   }
