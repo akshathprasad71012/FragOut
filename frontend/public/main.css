@@ -77,3 +77,35 @@ background: linear-gradient(0, rgba(255,0,0,1) 57%, rgba(249,255,0,1) 100%);
   margin: 0;
   padding: 7px 0 0 7px;
 }
+
+table, th, td{
+  border: 1px solid white;
+  border-collapse: collapse;
+}
+
+.leaderboard{
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.296);
+  text-align: center;
+}
+
+table{
+  margin: 0% 23%;
+}
+.leaderboard th{
+  padding: 1%;
+  width: 170px;
+  text-wrap: no-wrap;
+}
+
+.table-top{
+  height: 100px;
+  width: 100%;
+}
+
+.invisible{
+  display: none;
+}

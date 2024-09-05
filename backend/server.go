@@ -9,8 +9,10 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const roomSize = 10;
+
 type Server struct{
-	games map[int][10]*websocket.Conn           //map of gameId -> websockets
+	games map[int][roomSize]*websocket.Conn           //map of gameId -> websockets
 	sock_games map[*websocket.Conn]int          //map of websockets -> gameId
 	sock_playerId map[*websocket.Conn]int       //map of websockets => playerId
 	sock_index map[*websocket.Conn]int
@@ -19,7 +21,7 @@ type Server struct{
 
 func NewServer() *Server{
 	s := Server{
-		games: make(map[int][10]*websocket.Conn),
+		games: make(map[int][roomSize]*websocket.Conn),
 		sock_games: make(map[*websocket.Conn]int),
 		sock_playerId: make(map[*websocket.Conn]int),
 		sock_index: make(map[*websocket.Conn]int),
@@ -53,10 +55,10 @@ func (server *Server) handleConnection(ws *websocket.Conn){
 	}
 
 	if !vacancyFound {
-		game := server.games[server.numberOfplayers/10];
+		game := server.games[server.numberOfplayers/roomSize];
 		game[0] = ws;
-		server.games[server.numberOfplayers/10] = game;
-		server.sock_games[ws] = server.numberOfplayers/10;
+		server.games[server.numberOfplayers/roomSize] = game;
+		server.sock_games[ws] = server.numberOfplayers/roomSize;
 		server.sock_playerId[ws] = server.numberOfplayers;
 		server.sock_index[ws] = 0;
 	}
