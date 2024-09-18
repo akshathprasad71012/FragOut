@@ -146,7 +146,7 @@ function handleNewData(newData){
 }
 
 
-const socket = new WebSocket("ws://192.168.23.215:3000/ws");
+const socket = new WebSocket("wss://fragout-server-production.up.railway.app/ws");
 socket.addEventListener("message", (event) => {
   let msg = event.data;
   if(!checkWelcome(msg)){
