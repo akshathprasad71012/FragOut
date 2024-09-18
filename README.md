@@ -9,7 +9,24 @@
 
 A fun online multiplayer First Person Shooter game written in Javascript and Golang.
 
-## Getting Started
+## About the Game
+
+It uses a very basic implementation of Ray Casting Algorithm (see gif below) to render the map and enemies.
+The golang backend allows upto 5 players in a Game room.
+
+![](https://en.wikipedia.org/wiki/File:Simple_raycasting_with_fisheye_correction.gif)
+
+### Controls
+
+Use standard WASD controls. Use mouse to change viewing angle (left-right). Press tab to show leaderboard.
+
+### Scoring System
+
+Leaderboard consists of player name, total kills (in one session), 1-minite kills, 3-minite kills and 5-minite kills.
+
+Since every enemy can spawn again in the game immediately, 1-minite kills shows kills within one minite of your respawn.
+Similary 3 and 5-minite kills show kills that happened 3 and 5 minites after a respawn.
+5-minite kills have highest weightage as it shows how often you survive for 5 minites of longer.
 
 Instructions to clone the project and host locally. If server is hosted locally, clients on local network can connect directly.
 
