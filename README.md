@@ -14,7 +14,7 @@ A fun online multiplayer First Person Shooter game written in Javascript and Gol
 It uses a very basic implementation of Ray Casting Algorithm (see gif below) to render the map and enemies.
 The golang backend allows upto 5 players in a Game room.
 
-![](https://en.wikipedia.org/wiki/File:Simple_raycasting_with_fisheye_correction.gif)
+![](https://github.com/akshathprasad71012/FragOut/blob/main/Simple_raycasting_with_fisheye_correction.gif)
 
 ### Controls
 
