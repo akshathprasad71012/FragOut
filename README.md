@@ -18,7 +18,7 @@ The golang backend allows upto 5 players in a Game room.
 
 ### Controls
 
-Use standard WASD controls. Use mouse to change viewing angle (left-right). Press tab to show leaderboard.
+Use standard WASD controls. Use mouse to change viewing angle (left-right). Press letter "c" to show leaderboard.
 
 ### Scoring System
 
